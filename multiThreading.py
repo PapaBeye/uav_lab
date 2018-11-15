@@ -25,12 +25,12 @@ class mainsys:
             self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE, 
                                            stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
         if stid == 'PI':
-            self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE,
-                                           stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
-            self.fccomport = serial.Serial(str(fccomport), baudrate=57600,)
+            #self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE,
+            #                               stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
+            #self.fccomport = serial.Serial(str(fccomport), baudrate=57600,)
             self.vcap = cv2.VideoCapture(0)
             self.isimg_frame = self.vcap.read()
-            self.message_definition_path = message_definition_path
+            #self.message_definition_path = message_definition_path
             self.turncamoff = self.vcap.release()
 
 
@@ -54,10 +54,19 @@ class rpisys(mainsys):
                     r = w / float(h) # 7000 is arbitrary for this purpose its the area of the larget object on test image / 2
                     if area > 2000 and r >= 0.60 and r <= 1.30:
                         cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
-
+                        if not os.path.exists('positive'):
+                            os.makedirs('positive')
+                        name = time.time * 1000
+                        cv2.imwrite("positive/img"+str(name)+".jpg", img)
+'''
+            cv2.imshow('img', img)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+'''
 
 class ground(mainsys):
     pass
 
 
-init = mainsys(stid, g)
+while not (cv2.waitKey(1) & 0xFF == ord('q')):
+    rpisys(stid,gscomport,fccomport, message_definition_path).find_whiterec_fame()

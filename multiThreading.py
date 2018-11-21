@@ -22,20 +22,39 @@ else:
 
 class mainsys:
     def __init__(self, stid, gscomport, fc, message_definition_path):
-        if stid == 'GS':
-            self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE, 
-                                           stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
+        if stid == 'GS':#self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE, #                               stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
+            pass
         if stid == 'PI':
             self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE,
                                            stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
             self.fccomport = serial.Serial(str(fccomport), baudrate=57600,)
+            self.fcbyte = fccomport.read(1) #
             self.vcap = cv2.VideoCapture(0)
             self.isimg_frame = self.vcap.read()
-            self.message_definition_path = message_definition_path
+            #self.message_definition_path = message_definition_path
             self.turncamoff = self.vcap.release()
+            self.parser = VACSParser.Parser(message_definition_path)
 
 
 class rpisys(mainsys):
+    def getFCdata(self):
+        try:
+            byte = self.fcbyte
+            if byte:
+                self.parser.parse(byte)
+                newbyte = parser.get_packet()
+                if newbyte:
+                    for i in newbyte.message:
+                        if i == 'position/longitude':
+                            print("Longitube: "+str(newbyte.message[i]))
+                        if i == 'position/latitude':
+                            print("Latitude: "+str(newbyte.message[i]))
+                        if i == 'position/altitude':
+                            print("Altitude: "+str(newbyte.message[i]))
+        except Exception as e:
+            print(e)
+            pass
+
 
     def find_whiterec_fame(self):
         while 1:
@@ -59,12 +78,11 @@ class rpisys(mainsys):
                     r = w / float(h) # 7000 is arbitrary for this purpose its the area of the larget object on test image / 2
                     if area > 2000 and r >= 0.70 and r <= 1.30:
                         cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
-                        print("passed to handle\n")
-                        self.handleimg(img, 1)
-                        time.sleep(5)
                 else:
                     self.handleimg(img, 0)
-                    time.sleep(5)
+            cv2.imshow('img', img)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     def handleimg(self, image, xint):
         if xint == 1:
             if not os.path.exists('positive'):
@@ -76,8 +94,7 @@ class rpisys(mainsys):
                 os.makedirs('negative')
             name = time.time() * 1000
             cv2.imwrite("negative/img"+str(name)+".jpg", image)
-            
-                    
+
 
 '''
             cv2.imshow('img', img)
@@ -89,5 +106,5 @@ class ground(mainsys):
     pass
 
 
-while not (cv2.waitKey(1) & 0xFF == ord('q')):
+while 1:
     rpisys(stid,gscomport,fccomport, message_definition_path).find_whiterec_fame()

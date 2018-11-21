@@ -2,6 +2,7 @@ from enum import Enum
 import VACSMessages
 import struct
 
+
 class Parser:
 
     class Packet:
@@ -98,7 +99,8 @@ class Parser:
 
     def parse(self, incoming_byte):
         self.current_byte = incoming_byte[0]
-        func = self.switcher.get(self.state, lambda: "Invalid state in VACS.Parser.parse")
+        func = self.switcher.get(
+            self.state, lambda: "Invalid state in VACS.Parser.parse")
         func(self)
 
     def parse_sync0(self):
@@ -157,7 +159,10 @@ class Parser:
         else:
             self.packet_working.data = bytearray()
             self.data_length = 0
-            self.state = Parser.States.data
+            if self.length > 0:
+                self.state = Parser.States.data
+            else:
+                self.state = Parser.States.chka
 
     def parse_data(self):
         self.chk_a = (self.chk_a + self.current_byte) % 256
@@ -177,7 +182,8 @@ class Parser:
     def parse_chkb(self):
         if self.chk_b == self.current_byte:
             self.packet_finished = self.packet_working
-            self.packet_finished.message = self.decoder.decode(self.packet_finished)
+            self.packet_finished.message = self.decoder.decode(
+                self.packet_finished)
             self.packet_ready = True
             self.correct_message_count += 1
             self.state = Parser.States.sync0

@@ -1,4 +1,3 @@
-import serial
 import sys
 import VACSParser
 

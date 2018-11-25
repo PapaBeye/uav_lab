@@ -2,9 +2,15 @@ import cv2
 import numpy as np
 import imutils
 
+
+def distance_to_camera(knownWidth, focalLength, perWidth):
+    # compute and return the distance from the maker to the camer
+    return (knownWidth * focalLength) / perWidth
+
 def getsquare(image):
     #f = open("demofile.txt", "w") 
     #i = 1
+    frun = True
     img = cv2.imread(image)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -24,6 +30,13 @@ def getsquare(image):
             ar = w / float(h)
             if area > 2000 and ar >= 0.60 and ar <= 1.30:  # 7000 is arbitrary for this purpose its the area of the larget object on test image / 2
                 cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
+                marker = cv2.minAreaRect(c)
+                if frun == True:
+                    focalLength = (marker[1][0] * 315) / 15
+                    frun = False
+                print(focalLength)
+                objectdist = distance_to_camera(20,focalLength, marker[1][0])
+                print('the d ='+str(objectdist))
                 #f.write(str(area)+"     ,"+str(i)+"  END\n\n\n\n")
                 #i += 1
 

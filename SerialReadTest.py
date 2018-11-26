@@ -9,7 +9,7 @@ if len(sys.argv) != 3:
 serial_port_path = sys.argv[1]
 message_definition_path = sys.argv[2]
 
-serial_port = serial.Serial(serial_port_path, 57600)
+serial_port = open(str(serial_port_path),'rb')#serial.Serial(serial_port_path, 57600)
 
 parser = VACSParser.Parser(message_definition_path)
 

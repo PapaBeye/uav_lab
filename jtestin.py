@@ -1,11 +1,13 @@
 import serial
+gscomtopi = serial.Serial('COM7', 57600)
 
-ser = serial.Serial('COM4', 57600)
-
-file = open('plane_10.dat', 'rb')
-while 1: 
-    byte = file.read(1)
-    ser.write(byte)
+while True:
+    if gscomtopi.inWaiting() > 0:
+        data = gscomtopi.readline()
+        data = data.decode()
+        data = data.replace('-', '\n')
+        print(data)
+    
 
 
 

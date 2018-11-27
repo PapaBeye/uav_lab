@@ -1,16 +1,18 @@
 import cv2
 import threading
+from multiprocessing import Process
 import os
 import serial
 import imutils
 import sys
 import VACSParser
 import time
+from msvcrt import kbhit, getch
 
 
 
 if len(sys.argv) != 5:
-    print("Usage: python multiThreading.py station-ID gsPIport fcPIport message_definition_path")
+    print("final.exe PI COM3 COM1 \"FCSPlaneDefinition_Aries_FCS.xml\"")
     sys.exit(1)
 else:
     stid = sys.argv[1]
@@ -20,7 +22,7 @@ else:
 
 
 #q = multiprocessing.Queue()
-#vcap = cv2.VideoCapture(0)
+vcap = cv2.VideoCapture(0)
 
 
 gscomtopi = serial.Serial(str(gscomport), baudrate=57600,)
@@ -28,21 +30,24 @@ gscomtopi = serial.Serial(str(gscomport), baudrate=57600,)
 #gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE,
 #                               stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
 fccomport = serial.Serial(str(fccomport), baudrate=57600,)
-
 message_definition_path = message_definition_path
 parser = VACSParser.Parser(message_definition_path)
 Altitude = 0.00
-Latitude = ' '
-Longitude = ' '
+Latitude = 'wrong'
+Longitude = 'wrong '
 objectdist = 0
-frun = True
 tentWidth = 20
 focalLength = 415.15
+
 def dis_to_camera(Width, focalLength, perWidth):
     # compute and return the distance from the maker to the camer
     return (Width * focalLength) / perWidth
 
 def getFCdata():
+    global Latitude
+    global Longitude
+    global Altitude
+    num = 0
     while 1:
         byte = fccomport.read(1)
         if byte:
@@ -50,19 +55,25 @@ def getFCdata():
             newbyte = parser.get_packet()
             if newbyte:
                 for i in newbyte.message:
-                    if i == 'position/longitude':
-                        Longitube = str(newbyte.message[i])
-                        print("Longitube: "+str(newbyte.message[i]))
-                    if i == 'position/latitude':
+                    #print(i, newbyte.message[i], newbyte.message_id)
+                    if newbyte.message_id == 1:
+                        Longitude = str(newbyte.message['position/longitude'])
+                        print("Longitube: "+str(Longitude))
                         Latitude = str(newbyte.message[i])
-                        print("Latitude: "+str(newbyte.message[i]))
-                    if i == 'position/altitude':
-                        Altitude = float(newbyte.message[i])
-                        print("Altitude: "+str(newbyte.message[i])) #  getFCdata()
+                        print("Latitude: "+str(Latitude))
+                        Altitude = float(newbyte.message['position/altitude'])
+                        print("Altitude: "+str(Altitude)) #  getFCdata()
+            if kbhit():
+                break
 
 
-vcap = cv2.VideoCapture(0)
 def find_whiterec_fame():
+    global vcap
+    global Longitude
+    global Latitude
+    global Altitude
+    global objectdist
+    global focalLength
     while 1:
         _, img = vcap.read()
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -84,9 +95,9 @@ def find_whiterec_fame():
                     #if frun == True:
                     #    self.focalLength = (marker[1][0] * self.Altitude) / self.tentWidth
                     #    self.frun = False
-                    objectdist = distance_to_camera(tentWidth, focalLength, marker[1][0])
+                    objectdist = dis_to_camera(tentWidth, focalLength, marker[1][0])
                     comtogs(Altitude,Longitude,Latitude,objectdist)
-                    handleimg(img, 1, str(Altitude * 1000))
+                    handleimg(img, 1, Longitude)
             else:
                 handleimg(img, 0, str(time.time()))
         cv2.imshow('img', img)
@@ -94,6 +105,8 @@ def find_whiterec_fame():
             cv2.destroyAllWindows()
             break
     vcap.release()
+
+
 def handleimg(image, xint, name):
     if xint == 1:
         if not os.path.exists('positive'):
@@ -105,16 +118,21 @@ def handleimg(image, xint, name):
         name = time.time() * 1000
         cv2.imwrite("negative/img"+str(name)+".jpg", image)
 def comtogs(alt, lon, lat,dist):
-    while True:
-            data = 'Altitude: '+str(alt)+'-'+'Latitude: '+lat+'-'+'Longitube: '+lon+'-'+'Distance: '+dist+'\n'
-            data = data.encode()
-            gscomtopi.write(data)
+    data = 'Altitude: '+str(alt)+'-'+'Latitude: '+lat+'-'+'Longitube: '+lon+'-'+'Distance: '+str(dist)+'\n'
+    data = data.encode()
+    gscomtopi.write(data)
 
 
-
+'''
 t = threading.Thread(target=getFCdata)
 t2 = threading.Thread(target=find_whiterec_fame)
 t.start()
 t2.start()
 t.join()
 t2.join()
+'''
+def run():
+    getFCdata()
+    find_whiterec_fame()
+p = Process(target=run)
+p.start()

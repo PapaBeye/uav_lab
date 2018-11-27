@@ -31,7 +31,6 @@ class mainsys:
             self.gscomtopi = serial.Serial(str(gscomport), baudrate=57600, parity=serial.PARITY_NONE,
                                            stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
             self.fccomport = serial.Serial(str(fccomport), baudrate=57600,)
-            self.fcbyte = self.fccomport.read(1) #
             self.vcap = cv2.VideoCapture(0)
             self.isimg_frame = self.vcap.read()
             self.message_definition_path = message_definition_path
@@ -54,7 +53,7 @@ class rpisys(mainsys):
     def getFCdata(self):
         while 1:
             try:
-                byte = self.fcbyte
+                byte = self.fccomport.read(1)
                 if byte:
                     self.parser.parse(byte)
                     newbyte = self.parser.get_packet()
@@ -76,7 +75,6 @@ class rpisys(mainsys):
 
     def find_whiterec_fame(self):
         while 1:
-            # self.isimg_frame
             print('at leat i ran')
             _, img = self.isimg_frame
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -105,6 +103,7 @@ class rpisys(mainsys):
             cv2.imshow('img', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+            self.turncamoff
     def handleimg(self, image, xint, name):
         if xint == 1:
             if not os.path.exists('positive'):
@@ -133,6 +132,5 @@ class rpisys(mainsys):
 
 class ground(mainsys):
     pass
-while 1:
-    rpisys(stid,gscomport, fccomport,message_definition_path).find_whiterec_fame()
-    print('haha')
+
+

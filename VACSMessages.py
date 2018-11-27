@@ -61,7 +61,7 @@ class Decoder:
 
     def decode(self, packet):
         if packet.message_id not in self.messages:
-            print("Message received with unknown message_id: ", packet.message_id)
+            #print("Message received with unknown message_id: ", packet.message_id)
             return {}
 
         message_def = self.messages[packet.message_id]
@@ -74,8 +74,8 @@ class Decoder:
 
         else:
             if message_def.length != len(packet.data):
-                print("Length error in message with type", packet.message_id,
-                      "(expected", message_def.length, "got", len(packet.data), ")")
+                #print("Length error in message with type", packet.message_id,
+                #      "(expected", message_def.length, "got", len(packet.data), ")")
                 return {}
 
             for i in range(0, len(message_def.field_names)):

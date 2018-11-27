@@ -1,5 +1,5 @@
 import serial
-gscomtopi = serial.Serial('COM7', 57600)
+gscomtopi = serial.Serial('COM4', 57600)
 
 while True:
     if gscomtopi.inWaiting() > 0:

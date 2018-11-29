@@ -21,7 +21,7 @@ def getsquare(image):
         
         M = cv2.moments(c)
         peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.04 * peri, True)
+        approx = cv2.approxPolyDP(c, 0.14 * peri, True)
         area = cv2.contourArea(c)
 
         if len(approx) == 4:
@@ -31,10 +31,7 @@ def getsquare(image):
             if area > 2000 and ar >= 0.60 and ar <= 1.30:  # 7000 is arbitrary for this purpose its the area of the larget object on test image / 2
                 cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
                 marker = cv2.minAreaRect(c)
-                if frun == True:
-                    focalLength = (marker[1][0] * 315) / 15
-                    frun = False
-                print(focalLength)
+                focalLength = 415.15
                 objectdist = distance_to_camera(20,focalLength, marker[1][0])
                 print('the d ='+str(objectdist))
                 #f.write(str(area)+"     ,"+str(i)+"  END\n\n\n\n")

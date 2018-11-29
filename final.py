@@ -1,6 +1,6 @@
 import cv2
 import threading
-from multiprocessing import Process
+from multiprocessing import Process, Pool
 import os
 import serial
 import imutils
@@ -47,7 +47,6 @@ def getFCdata():
     global Latitude
     global Longitude
     global Altitude
-    num = 0
     while 1:
         byte = fccomport.read(1)
         if byte:
@@ -77,19 +76,19 @@ def find_whiterec_fame():
     while 1:
         _, img = vcap.read()
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
+        #blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        thresh = cv2.threshold(gray, 235, 255, cv2.THRESH_BINARY)[1]
         cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = cnts[0] if imutils.is_cv2() else cnts[1]
         for c in cnts:
             M = cv2.moments(c)
             peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.05 * peri, True)
+            approx = cv2.approxPolyDP(c, 0.14 * peri, True)
             area = cv2.contourArea(c)
             if len(approx) == 4:
                 (x, y, w, h) = cv2.boundingRect(approx)
                 r = w / float(h) # 2000 is arbitrary for this purpose its the area of the larget object on test image / 2
-                if area > 2000 and r >= 0.70 and r <= 1.30:
+                if area > 1500 and r >= 0.75 and r <= 1.25:
                     cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
                     marker = cv2.minAreaRect(c)
                     #if frun == True:
@@ -101,6 +100,8 @@ def find_whiterec_fame():
             else:
                 handleimg(img, 0, str(time.time()))
         cv2.imshow('img', img)
+        cv2.imshow('img2', gray)
+        cv2.imshow('img3', thresh)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
@@ -123,16 +124,10 @@ def comtogs(alt, lon, lat,dist):
     gscomtopi.write(data)
 
 
-'''
 t = threading.Thread(target=getFCdata)
 t2 = threading.Thread(target=find_whiterec_fame)
 t.start()
 t2.start()
 t.join()
 t2.join()
-'''
-def run():
-    getFCdata()
-    find_whiterec_fame()
-p = Process(target=run)
-p.start()
+
